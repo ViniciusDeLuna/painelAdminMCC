@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+select {
+  background-color: #16211d;
+  color: #e9eef6;
+}
+
+select option {
+  background-color: #16211d;
+  color: #e9eef6;
+}

@@ -4,27 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 
-type Post = {
-  id: string
-  title: string
-  slug: string
-  excerpt: string | null
-  image_url: string | null
-  published: boolean
-  editorial_date: string | null
-  author: string | null
-}
-
-export default function AdminPage() {
+export default function AdminHomePage() {
   const router = useRouter()
   const supabase = createClient()
 
   const [loading, setLoading] = useState(true)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [erro, setErro] = useState('')
 
   useEffect(() => {
-    async function carregar() {
+    async function verificarSessao() {
       const {
         data: { session }
       } = await supabase.auth.getSession()
@@ -34,22 +21,10 @@ export default function AdminPage() {
         return
       }
 
-      const { data, error } = await supabase
-        .from('posts')
-        .select('id, title, slug, excerpt, image_url, published, editorial_date, author')
-        .order('editorial_date', { ascending: false })
-
-      if (error) {
-        setErro('Erro ao carregar os editoriais.')
-        setLoading(false)
-        return
-      }
-
-      setPosts(data || [])
       setLoading(false)
     }
 
-    carregar()
+    verificarSessao()
   }, [router, supabase])
 
   async function handleLogout() {
@@ -57,27 +32,14 @@ export default function AdminPage() {
     router.push('/login')
   }
 
-  async function handleDelete(id: string) {
-    const confirmar = window.confirm('Deseja realmente excluir este editorial?')
-    if (!confirmar) return
-
-    const { error } = await supabase.from('posts').delete().eq('id', id)
-
-    if (error) {
-      alert('Erro ao excluir o editorial.')
-      return
-    }
-
-    setPosts((estadoAnterior) => estadoAnterior.filter((post) => post.id !== id))
-  }
-
-  function formatarData(data: string | null) {
-    if (!data) return '-'
-
-    const match = String(data).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
-    if (!match) return data
-
-    return `${match[3]}/${match[2]}/${match[1]}`
+  if (loading) {
+    return (
+      <main style={pageStyle}>
+        <div style={containerStyle}>
+          <div style={statusBoxStyle}>Carregando painel...</div>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -86,19 +48,18 @@ export default function AdminPage() {
         <header style={headerBoxStyle}>
           <div>
             <span style={pillStyle}>Painel administrativo</span>
-            <h1 style={titleStyle}>Editoriais</h1>
+            <h1 style={titleStyle}>Central de gerenciamento</h1>
             <p style={subtitleStyle}>
-              Gerencie os editoriais com o mesmo padrão visual do site principal.
+              Escolha qual área deseja acessar para administrar o conteúdo do site.
             </p>
           </div>
 
           <div style={headerActionsStyle}>
-            <button style={secondaryButtonStyle} onClick={() => window.open('https://cantelli.criadorlw.com.br/editoriais')}>
+            <button
+              style={secondaryButtonStyle}
+              onClick={() => window.open('https://cantelli.criadorlw.com.br', '_blank')}
+            >
               Ver site
-            </button>
-
-            <button style={primaryButtonStyle} onClick={() => router.push('/admin/novo')}>
-              Novo editorial
             </button>
 
             <button style={secondaryButtonStyle} onClick={handleLogout}>
@@ -107,96 +68,75 @@ export default function AdminPage() {
           </div>
         </header>
 
-        {loading && (
-          <div style={statusBoxStyle}>
-            <p style={{ margin: 0 }}>Carregando editoriais...</p>
-          </div>
-        )}
+        <section style={gridStyle}>
+          <article
+            style={cardStyle}
+            onClick={() => router.push('/admin/editoriais')}
+          >
+            <div style={cardIconStyle}>📰</div>
+            <h2 style={cardTitleStyle}>Gerenciar editoriais</h2>
+            <p style={cardTextStyle}>
+              Acesse a listagem, crie novos editoriais, edite conteúdos existentes
+              e gerencie publicações.
+            </p>
 
-        {erro && (
-          <div style={errorBoxStyle}>
-            <p style={{ margin: 0 }}>{erro}</p>
-          </div>
-        )}
+            <div style={cardButtonsRowStyle}>
+              <button
+                style={primaryButtonStyle}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push('/admin/editoriais')
+                }}
+              >
+                Abrir editoriais
+              </button>
 
-        {!loading && !erro && posts.length === 0 && (
-          <div style={statusBoxStyle}>
-            <p style={{ margin: 0 }}>Nenhum editorial cadastrado ainda.</p>
-          </div>
-        )}
+              <button
+                style={secondaryButtonStyle}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push('/admin/novo')
+                }}
+              >
+                Novo editorial
+              </button>
+            </div>
+          </article>
 
-        {!loading && !erro && posts.length > 0 && (
-          <div style={gridStyle}>
-            {posts.map((post) => (
-              <article key={post.id} style={cardStyle}>
-                <div style={imageWrapStyle}>
-                  {post.image_url ? (
-                    <img src={post.image_url} alt={post.title} style={imageStyle} />
-                  ) : (
-                    <div style={imageFallbackStyle}>Sem imagem</div>
-                  )}
-                </div>
+          <article
+            style={cardStyle}
+            onClick={() => router.push('/admin/frases')}
+          >
+            <div style={cardIconStyle}>✒️</div>
+            <h2 style={cardTitleStyle}>Gerenciar frases</h2>
+            <p style={cardTextStyle}>
+              Acesse as frases cadastradas, edite categorias, fundos, estilos
+              visuais e publique novas artes.
+            </p>
 
-                <div style={cardContentStyle}>
-                  <div style={metaRowStyle}>
-                    <span
-                      style={{
-                        ...statusPillStyle,
-                        background: post.published
-                          ? 'rgba(34,197,94,.10)'
-                          : 'rgba(255,255,255,.05)',
-                        borderColor: post.published
-                          ? 'rgba(34,197,94,.28)'
-                          : 'rgba(255,255,255,.10)',
-                        color: post.published
-                          ? 'rgba(220,255,230,.95)'
-                          : 'rgba(255,255,255,.78)'
-                      }}
-                    >
-                      {post.published ? 'Publicado' : 'Rascunho'}
-                    </span>
+            <div style={cardButtonsRowStyle}>
+              <button
+                style={primaryButtonStyle}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push('/admin/frases')
+                }}
+              >
+                Abrir frases
+              </button>
 
-                    <span style={metaTextStyle}>{formatarData(post.editorial_date)}</span>
-                  </div>
-
-                  <h2 style={cardTitleStyle}>{post.title}</h2>
-
-                  <p style={cardExcerptStyle}>
-                    {post.excerpt || 'Sem resumo cadastrado.'}
-                  </p>
-
-                  <div style={infoListStyle}>
-                    <div style={infoItemStyle}>
-                      <strong style={infoLabelStyle}>Slug:</strong>
-                      <span style={infoValueStyle}>{post.slug}</span>
-                    </div>
-
-                    <div style={infoItemStyle}>
-                      <strong style={infoLabelStyle}>Autor:</strong>
-                      <span style={infoValueStyle}>{post.author || '-'}</span>
-                    </div>
-                  </div>
-
-                  <div style={cardActionsStyle}>
-                    <button
-                      style={secondaryButtonStyle}
-                      onClick={() => router.push(`/admin/editar/${post.id}`)}
-                    >
-                      Editar
-                    </button>
-
-                    <button
-                      style={dangerButtonStyle}
-                      onClick={() => handleDelete(post.id)}
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+              <button
+                style={secondaryButtonStyle}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push('/admin/frases/nova')
+                }}
+              >
+                Nova frase
+              </button>
+            </div>
+          </article>
+        </section>
       </div>
     </main>
   )
@@ -211,7 +151,7 @@ const pageStyle: React.CSSProperties = {
 }
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: '1280px',
+  maxWidth: '1180px',
   margin: '0 auto'
 }
 
@@ -219,7 +159,7 @@ const headerBoxStyle: React.CSSProperties = {
   background: '#141f1b',
   border: '1px solid rgba(255,255,255,.08)',
   borderRadius: '20px',
-  padding: '22px',
+  padding: '24px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
@@ -251,13 +191,71 @@ const titleStyle: React.CSSProperties = {
 const subtitleStyle: React.CSSProperties = {
   margin: 0,
   color: 'rgba(255,255,255,.72)',
-  fontSize: '15px'
+  fontSize: '15px',
+  maxWidth: '700px'
 }
 
 const headerActionsStyle: React.CSSProperties = {
   display: 'flex',
   gap: '12px',
   flexWrap: 'wrap'
+}
+
+const gridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gap: '24px'
+}
+
+const cardStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,.035)',
+  border: '1px solid rgba(255,255,255,.10)',
+  borderRadius: '22px',
+  padding: '24px',
+  boxShadow: '0 14px 30px rgba(0,0,0,.28)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px',
+  cursor: 'pointer'
+}
+
+const cardIconStyle: React.CSSProperties = {
+  width: '56px',
+  height: '56px',
+  borderRadius: '16px',
+  display: 'grid',
+  placeItems: 'center',
+  background: 'rgba(255,255,255,.05)',
+  border: '1px solid rgba(255,255,255,.08)',
+  fontSize: '24px'
+}
+
+const cardTitleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: '1.4rem',
+  fontWeight: 800
+}
+
+const cardTextStyle: React.CSSProperties = {
+  margin: 0,
+  color: 'rgba(255,255,255,.72)',
+  fontSize: '14px',
+  lineHeight: 1.6
+}
+
+const cardButtonsRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: '10px',
+  flexWrap: 'wrap',
+  marginTop: 'auto'
+}
+
+const statusBoxStyle: React.CSSProperties = {
+  border: '1px dashed rgba(255,255,255,.18)',
+  borderRadius: '18px',
+  background: 'rgba(255,255,255,.02)',
+  color: 'rgba(255,255,255,.75)',
+  padding: '18px'
 }
 
 const baseButtonStyle: React.CSSProperties = {
@@ -281,138 +279,4 @@ const secondaryButtonStyle: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,.08)',
   background: 'rgba(255,255,255,.03)',
   color: 'rgba(255,255,255,.90)'
-}
-
-const dangerButtonStyle: React.CSSProperties = {
-  ...baseButtonStyle,
-  border: '1px solid rgba(255,80,80,.22)',
-  background: 'rgba(255,80,80,.08)',
-  color: '#ffd1d1'
-}
-
-const statusBoxStyle: React.CSSProperties = {
-  border: '1px dashed rgba(255,255,255,.18)',
-  borderRadius: '18px',
-  background: 'rgba(255,255,255,.02)',
-  color: 'rgba(255,255,255,.75)',
-  padding: '18px'
-}
-
-const errorBoxStyle: React.CSSProperties = {
-  border: '1px solid rgba(255,0,0,.18)',
-  borderRadius: '18px',
-  background: 'rgba(255,0,0,.08)',
-  color: '#ffb3b3',
-  padding: '18px'
-}
-
-const gridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-  gap: '22px'
-}
-
-const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,.035)',
-  border: '1px solid rgba(255,255,255,.10)',
-  borderRadius: '18px',
-  overflow: 'hidden',
-  boxShadow: '0 14px 30px rgba(0,0,0,.28)',
-  display: 'flex',
-  flexDirection: 'column'
-}
-
-const imageWrapStyle: React.CSSProperties = {
-  width: '100%',
-  height: '190px',
-  background: 'rgba(255,255,255,.04)'
-}
-
-const imageStyle: React.CSSProperties = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  display: 'block'
-}
-
-const imageFallbackStyle: React.CSSProperties = {
-  width: '100%',
-  height: '100%',
-  display: 'grid',
-  placeItems: 'center',
-  color: 'rgba(255,255,255,.50)',
-  fontSize: '14px'
-}
-
-const cardContentStyle: React.CSSProperties = {
-  padding: '18px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '14px',
-  flex: 1
-}
-
-const metaRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '12px',
-  flexWrap: 'wrap'
-}
-
-const statusPillStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  padding: '6px 10px',
-  borderRadius: '999px',
-  border: '1px solid',
-  fontSize: '12px',
-  fontWeight: 700
-}
-
-const metaTextStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: 'rgba(255,255,255,.58)'
-}
-
-const cardTitleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: '1.15rem',
-  lineHeight: 1.3,
-  fontWeight: 800
-}
-
-const cardExcerptStyle: React.CSSProperties = {
-  margin: 0,
-  color: 'rgba(255,255,255,.72)',
-  fontSize: '14px',
-  lineHeight: 1.5
-}
-
-const infoListStyle: React.CSSProperties = {
-  display: 'grid',
-  gap: '8px'
-}
-
-const infoItemStyle: React.CSSProperties = {
-  display: 'grid',
-  gap: '4px'
-}
-
-const infoLabelStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: 'rgba(255,255,255,.58)'
-}
-
-const infoValueStyle: React.CSSProperties = {
-  fontSize: '13px',
-  color: 'rgba(255,255,255,.90)',
-  wordBreak: 'break-word'
-}
-
-const cardActionsStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-  marginTop: 'auto'
 }

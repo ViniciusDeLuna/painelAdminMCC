@@ -20,6 +20,7 @@ export default function NovoEditorialPage() {
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+  const [slugEditadoManualmente, setSlugEditadoManualmente] = useState(false)
 
   function gerarSlugAutomatico(texto: string) {
     return texto
@@ -36,7 +37,7 @@ export default function NovoEditorialPage() {
     const valor = e.target.value
     setTitle(valor)
 
-    if (!slug.trim()) {
+    if (!slugEditadoManualmente) {
       setSlug(gerarSlugAutomatico(valor))
     }
   }
@@ -101,7 +102,7 @@ export default function NovoEditorialPage() {
       setSucesso('Editorial criado com sucesso.')
 
       setTimeout(() => {
-        router.push('/admin')
+        router.push('/admin/editoriais')
       }, 900)
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro inesperado.')
@@ -114,8 +115,8 @@ export default function NovoEditorialPage() {
     <main style={pageStyle}>
       <div style={containerStyle}>
         <div style={{ marginBottom: '18px' }}>
-          <button style={secondaryButtonStyle} onClick={() => router.push('/admin')}>
-            ← Voltar ao painel
+          <button style={secondaryButtonStyle} onClick={() => router.push('/admin/editoriais')}>
+            ← Voltar aos editoriais
           </button>
         </div>
 
@@ -145,7 +146,11 @@ export default function NovoEditorialPage() {
               <input
                 type="text"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => {
+                  const valor = e.target.value
+                  setSlug(valor)
+                  setSlugEditadoManualmente(valor.trim() !== '')
+                }}
                 required
                 style={inputStyle}
               />
