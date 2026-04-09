@@ -57,7 +57,7 @@ export default function AdminHomePage() {
           <div style={headerActionsStyle}>
             <button
               style={secondaryButtonStyle}
-              onClick={() => window.open('https://cantelli.criadorlw.com.br', '_blank')}
+              onClick={() => window.open('https://frasesmauricioccantelli.com.br/', '_blank')}
             >
               Ver site
             </button>

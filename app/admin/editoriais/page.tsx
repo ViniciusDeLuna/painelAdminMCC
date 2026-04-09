@@ -109,7 +109,7 @@ export default function AdminPage() {
 
             <button
                 style={secondaryButtonStyle}
-                onClick={() => window.open('https://cantelli.criadorlw.com.br/editoriais', '_blank')}
+                onClick={() => window.open('https://frasesmauricioccantelli.com.br/editoriais', '_blank')}
             >
                 Ver site
             </button>
